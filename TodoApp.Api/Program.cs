@@ -1,4 +1,6 @@
 using System.Net;
+using Microsoft.EntityFrameworkCore;
+using TodoApp.Api.Data;
 using TodoApp.Api.Models;
 using TodoApp.Api.Services;
 using TodoApp.Shared.Models;
@@ -9,17 +11,47 @@ var builder = WebApplication.CreateBuilder(args);
 // Allow FE (Blazor WASM) to call API
 var corsPolicy = "_allowWeb";
 builder.Services.AddCors(opt =>
+ {
+     opt.AddPolicy(corsPolicy, p =>
+         p.AllowAnyOrigin()       // untuk produksi: batasi ke origin FE
+          .AllowAnyHeader()
+          .AllowAnyMethod());
+ });
+
+// Configure Database Connection
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (!string.IsNullOrEmpty(connectionString))
 {
-    opt.AddPolicy(corsPolicy, p =>
-        p.AllowAnyOrigin()       // untuk produksi: batasi ke origin FE
-         .AllowAnyHeader()
-         .AllowAnyMethod());
-});
+    // Konfigurasi untuk Neon PostgreSQL
+    builder.Services.AddDbContext<TodoDbContext>(options =>
+    {
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 3,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorCodesToAdd: null
+            );
+        });
 
+        // Enable sensitive data logging hanya di development
+        if (builder.Environment.IsDevelopment())
+        {
+            options.EnableSensitiveDataLogging();
+        }
+    });
 
-
-// DI
-builder.Services.AddSingleton<ITodoRepository, InMemoryTodoRepository>();
+    builder.Services.AddScoped<ITodoRepository, DatabaseTodoRepository>();
+    Console.WriteLine($"✅ Database configured with Neon PostgreSQL");
+}
+else
+{
+    // Fallback ke in-memory untuk development tanpa DB
+    builder.Services.AddSingleton<ITodoRepository, InMemoryTodoRepository>();
+    Console.WriteLine("⚠️ Using in-memory repository (no database connection)");
+}
 builder.Services.Configure<AiChatOptions>(builder.Configuration.GetSection("AiChat"));
 builder.Services.AddHttpClient<AiChatService>(client =>
 {
@@ -36,10 +68,56 @@ var app = builder.Build();
 
 app.UseCors(corsPolicy);
 
+// Auto-migrate database on startup (khusus untuk cloud deployment)
+if (!app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetService<TodoDbContext>();
+    if (context != null)
+    {
+        try
+        {
+            await context.Database.MigrateAsync();
+            Console.WriteLine("✅ Database migration completed");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Migration failed: {ex.Message}");
+            // Jangan crash aplikasi jika migration gagal
+        }
+    }
+}
+
 if (app.Environment.IsDevelopment())
 {
 
 }
+
+// Health check endpoint
+app.MapGet("/api/health", async (TodoDbContext? context) =>
+{
+    var health = new
+    {
+        status = "healthy",
+        timestamp = DateTime.UtcNow,
+        database = "unknown"
+    };
+
+    if (context != null)
+    {
+        try
+        {
+            await context.Database.CanConnectAsync();
+            health = health with { database = "connected" };
+        }
+        catch
+        {
+            health = health with { database = "disconnected" };
+        }
+    }
+
+    return Results.Ok(health);
+});
 app.MapPost("/api/chat", async (ChatRequest request, AiChatService chatService, CancellationToken cancellationToken) =>
 {
     if (string.IsNullOrWhiteSpace(request.Message))
