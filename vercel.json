@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "TodoApp.Api/*.csproj",
+      "use": "@vercel/dotnet"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/TodoApp.Api"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/TodoApp.Web/wwwroot/$1"
+    }
+  ],
+  "env": {
+    "ASPNETCORE_ENVIRONMENT": "Development"
+  }
+}
