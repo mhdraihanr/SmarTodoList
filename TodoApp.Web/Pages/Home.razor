@@ -304,8 +304,7 @@
 
         try
         {
-            var apiKey = await MyJSRuntime.InvokeAsync<string>("localStorage.getItem", "OpenRouterApiKey");
-            var aiResponse = await Api.RequestChatAsync(userMessage, apiKey);
+            var aiResponse = await Api.RequestChatAsync(userMessage);
 
             if (aiResponse is not null)
             {

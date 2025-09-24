@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>TodoApp.Api-2A1D1E7F-4F6C-4D3E-9C9D-SECRET</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

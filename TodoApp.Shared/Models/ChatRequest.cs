@@ -1,3 +1,3 @@
 namespace TodoApp.Shared.Models;
 
-public record ChatRequest(string Message, string? ApiKey);
+public record ChatRequest(string Message);

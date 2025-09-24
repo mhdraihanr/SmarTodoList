@@ -2,6 +2,7 @@ using System.Net;
 using TodoApp.Api.Models;
 using TodoApp.Api.Services;
 using TodoApp.Shared.Models;
+using TodoApp.Api.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,9 +20,16 @@ builder.Services.AddCors(opt =>
 
 // DI
 builder.Services.AddSingleton<ITodoRepository, InMemoryTodoRepository>();
+builder.Services.Configure<AiChatOptions>(builder.Configuration.GetSection("AiChat"));
 builder.Services.AddHttpClient<AiChatService>(client =>
 {
-    client.BaseAddress = new Uri("https://openrouter.ai");
+    // We'll set the base address from configuration here
+    var aiChatConfig = builder.Configuration.GetSection("AiChat");
+    var apiBaseUrl = aiChatConfig["ApiBaseUrl"];
+    if (!string.IsNullOrWhiteSpace(apiBaseUrl))
+    {
+        client.BaseAddress = new Uri(apiBaseUrl);
+    }
 });
 
 var app = builder.Build();

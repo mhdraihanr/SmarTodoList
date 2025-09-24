@@ -6,6 +6,13 @@ obj/
 packages/
 !.nuget/packages
 
+# Configuration files with sensitive data
+appsettings.json
+appsettings.*.json
+!appsettings.Example.json
+secrets.json
+*.secrets.json
+
 # Environment variables
 .env.mcp
 .env

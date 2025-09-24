@@ -45,14 +45,9 @@ public class TodoApiClient
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<ChatMessage?> RequestChatAsync(string message, string? apiKey)
+    public async Task<ChatMessage?> RequestChatAsync(string message)
     {
-        var payload = new
-        {
-            Message = message,
-            ApiKey = apiKey
-        };
-
+        var payload = new { Message = message };
         var response = await _http.PostAsJsonAsync("/api/chat", payload);
         if (!response.IsSuccessStatusCode)
         {

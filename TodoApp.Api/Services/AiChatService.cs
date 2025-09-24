@@ -4,21 +4,22 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using TodoApp.Shared.Models;
+using TodoApp.Api.Options;
+using Microsoft.Extensions.Options;
 
 namespace TodoApp.Api.Services;
 
 public class AiChatService
 {
     private const string SystemPrompt = "You are a helpful AI assistant for generating todo task suggestions. Respond with 3 concise task ideas in a numbered list format, e.g., '1. Task one\\n2. Task two\\n3. Task three'. Keep it relevant to productivity.";
-    private const string RefererHeader = "https://todolist.example.com";
-    private const string TitleHeader = "TodoApp AI Chat";
-    private const string DefaultApiKey = "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";
 
     private readonly HttpClient _httpClient;
+    private readonly AiChatOptions _options;
 
-    public AiChatService(HttpClient httpClient)
+    public AiChatService(HttpClient httpClient, IOptions<AiChatOptions> options)
     {
         _httpClient = httpClient;
+        _options = options.Value;
     }
 
     public async Task<ChatMessage> SendAsync(ChatRequest request, CancellationToken cancellationToken = default)
@@ -30,7 +31,7 @@ public class AiChatService
 
         var payload = new
         {
-            model = "x-ai/grok-4-fast:free",
+            model = _options.Model,
             messages = new[]
                 {
                 new { role = "system", content = SystemPrompt },
@@ -45,10 +46,19 @@ public class AiChatService
             Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
         };
 
-        var apiKey = string.IsNullOrWhiteSpace(request.ApiKey) ? DefaultApiKey : request.ApiKey;
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        httpRequest.Headers.Add("HTTP-Referer", RefererHeader);
-        httpRequest.Headers.Add("X-Title", TitleHeader);
+        if (!string.IsNullOrWhiteSpace(_options.ApiKey))
+        {
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
+        }
+        
+        if (!string.IsNullOrWhiteSpace(_options.Referer))
+        {
+            httpRequest.Headers.Add("HTTP-Referer", _options.Referer);
+        }
+        if (!string.IsNullOrWhiteSpace(_options.Title))
+        {
+            httpRequest.Headers.Add("X-Title", _options.Title);
+        }
 
         try
         {
@@ -58,6 +68,12 @@ public class AiChatService
             if (!response.IsSuccessStatusCode)
             {
                 throw new InvalidOperationException($"Upstream AI call failed ({(int)response.StatusCode}): {responseBody}");
+            }
+
+            // Check if response looks like JSON
+            if (string.IsNullOrWhiteSpace(responseBody) || !responseBody.TrimStart().StartsWith("{"))
+            {
+                throw new InvalidOperationException($"Invalid response format (not JSON): {responseBody}");
             }
 
             using var document = JsonDocument.Parse(responseBody);
