@@ -15,9 +15,5 @@
     <ProjectReference Include="..\TodoApp.Shared\TodoApp.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\TodoApp.Api\Models\ChatMessage.cs" Link="Models\ChatMessage.cs" />
-  </ItemGroup>
-
 </Project>
 

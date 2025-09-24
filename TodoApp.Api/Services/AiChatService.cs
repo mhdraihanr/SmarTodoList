@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using TodoApp.Api.Models;
+using TodoApp.Shared.Models;
 
 namespace TodoApp.Api.Services;
 
@@ -12,7 +12,7 @@ public class AiChatService
     private const string SystemPrompt = "You are a helpful AI assistant for generating todo task suggestions. Respond with 3 concise task ideas in a numbered list format, e.g., '1. Task one\\n2. Task two\\n3. Task three'. Keep it relevant to productivity.";
     private const string RefererHeader = "https://todolist.example.com";
     private const string TitleHeader = "TodoApp AI Chat";
-    private const string DefaultApiKey = "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";
+    private const string DefaultApiKey = "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";
 
     private readonly HttpClient _httpClient;
 

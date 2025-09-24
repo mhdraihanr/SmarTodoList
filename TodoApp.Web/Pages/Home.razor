@@ -1,6 +1,6 @@
 @page "/"
 @implements IDisposable
-@using TodoApp.Api.Models
+@using TodoApp.Shared.Models
 @using System.Net.Http.Headers
 @using System.Text
 @inject TodoApp.Web.Services.TodoApiClient Api
@@ -178,7 +178,7 @@
 }
 @code {
     #region Private Fields
-    private List<TodoApp.Shared.TodoItemDto> _items = new();
+    private List<TodoItemDto> _items = new();
     private string _newTitle = "";
     private bool _isDarkMode = false;
     private TodoFilter _filter = TodoFilter.All;
@@ -190,7 +190,7 @@
     #endregion
 
     #region Computed Properties
-    private List<TodoApp.Shared.TodoItemDto> _filteredItems => _filter switch
+    private List<TodoItemDto> _filteredItems => _filter switch
     {
         TodoFilter.All => _items,
         TodoFilter.Active => _items.Where(i => !i.IsDone).ToList(),
@@ -418,7 +418,7 @@
         }
     }
 
-    private async Task Toggle(TodoApp.Shared.TodoItemDto item, bool value)
+    private async Task Toggle(TodoItemDto item, bool value)
     {
         if (_loadError is not null) return;
 
@@ -445,7 +445,7 @@
         }
     }
 
-    private async Task EditTitle(TodoApp.Shared.TodoItemDto item, string title)
+    private async Task EditTitle(TodoItemDto item, string title)
     {
         title = title.Trim();
         if (string.IsNullOrEmpty(title) || title == item.Title || _loadError is not null) return;

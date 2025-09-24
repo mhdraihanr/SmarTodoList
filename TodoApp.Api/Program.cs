@@ -1,7 +1,7 @@
 using System.Net;
 using TodoApp.Api.Models;
 using TodoApp.Api.Services;
-using TodoApp.Shared;
+using TodoApp.Shared.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

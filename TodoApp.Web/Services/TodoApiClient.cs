@@ -1,11 +1,7 @@
 using System.Net.Http.Json;
-using TodoApp.Api.Models;
-using TodoApp.Shared;
+using TodoApp.Shared.Models;
 
 namespace TodoApp.Web.Services;
-
-public record CreateTodoRequest(string Title);
-public record UpdateTodoRequest(string Title, bool IsDone);
 
 public class TodoApiClient
 {

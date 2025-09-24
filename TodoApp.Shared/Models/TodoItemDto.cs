@@ -1,4 +1,4 @@
-namespace TodoApp.Shared;
+namespace TodoApp.Shared.Models;
 
 public record TodoItemDto(
     int Id,
