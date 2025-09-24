@@ -1,0 +1,52 @@
+{
+  "version": "0.1.0",
+  "name": "TodoList MCP Configuration",
+  "description": "Model Context Protocol configuration for TodoList C# solution",
+  "mcpServers": {
+    "github": {
+      "command": "mcp-server-github",
+      "description": "GitHub integration for repository management",
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "filesystem": {
+      "command": "mcp-server-filesystem",
+      "description": "File system access for the TodoList solution",
+      "args": ["${workspaceFolder}"]
+    }
+  },
+  "projectContext": {
+    "type": "csharp-solution",
+    "framework": "net9.0",
+    "projects": [
+      {
+        "name": "TodoApp.Api",
+        "type": "webapi",
+        "path": "./TodoApp.Api",
+        "description": "REST API backend for TodoList application"
+      },
+      {
+        "name": "TodoApp.Web",
+        "type": "blazor-wasm",
+        "path": "./TodoApp.Web",
+        "description": "Blazor WebAssembly frontend application"
+      },
+      {
+        "name": "TodoApp.Shared",
+        "type": "classlib",
+        "path": "./TodoApp.Shared",
+        "description": "Shared models and DTOs between API and Web"
+      }
+    ],
+    "technologies": ["ASP.NET Core", "Blazor WebAssembly", "C#", ".NET 9"]
+  },
+  "copilotBoost": {
+    "enabled": true,
+    "contextAware": true,
+    "projectSpecific": true,
+    "enhancedCodeCompletion": true,
+    "smartRefactoring": true,
+    "architectureAware": true
+  }
+}

@@ -1,0 +1,56 @@
+:root {
+  --primary-bg-color: #2c3e50;
+  --secondary-bg-color: #34495e;
+  --text-color: #ecf0f1;
+  --primary-color: #3498db;
+  --card-bg-color: #4a637b;
+  --input-bg-color: #3e5266;
+  --list-group-item-bg-color: #5d7c99;
+}
+
+body {
+  background-color: var(--primary-bg-color) !important;
+  color: var(--text-color) !important;
+}
+
+.card {
+  background-color: var(--card-bg-color);
+  border-color: #7f8c8d;
+}
+
+.card-header,
+.card-footer {
+  background-color: var(--secondary-bg-color);
+  border-bottom: 1px solid #7f8c8d;
+}
+
+.form-control {
+  background-color: var(--input-bg-color);
+  color: var(--text-color);
+  border-color: #7f8c8d;
+}
+
+.form-control::placeholder {
+  color: #bdc3c7;
+}
+
+.form-control:focus {
+  background-color: var(--input-bg-color);
+  color: var(--text-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+}
+
+.list-group-item {
+  background-color: var(--list-group-item-bg-color);
+  border-color: #7f8c8d;
+  color: var(--text-color);
+}
+
+.list-group-item-light {
+  background-color: #3e5266 !important;
+}
+
+.form-check-label.text-decoration-line-through {
+  color: #95a5a6 !important;
+}

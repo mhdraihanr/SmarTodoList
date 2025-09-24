@@ -1,0 +1,21 @@
+# .NET Core
+bin/
+obj/
+*.user
+*.suo
+packages/
+!.nuget/packages
+
+# Environment variables
+.env.mcp
+.env
+.mcp-config.json
+claude_desktop_config.json
+
+# IDE
+.vscode/settings.json
+.vs/
+
+# OS
+.DS_Store
+Thumbs.db

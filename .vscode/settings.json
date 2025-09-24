@@ -1,0 +1,171 @@
+{
+  // MCP (Model Context Protocol) Configuration for TodoList
+  "mcp.enable": true,
+  "mcp.servers": {
+    "github": {
+      "command": "mcp-server-github",
+      "description": "GitHub integration for TodoList project"
+    },
+    "filesystem": {
+      "command": "mcp-server-filesystem",
+      "args": ["--base-path", "."],
+      "description": "Enhanced filesystem access"
+    }
+  },
+
+  // GitHub Copilot Enhanced Settings
+  "github.copilot.enable": {
+    "*": true,
+    "yaml": true,
+    "plaintext": true,
+    "markdown": true,
+    "csharp": true,
+    "json": true,
+    "xml": true,
+    "razor": true
+  },
+  "github.copilot.advanced": {
+    "length": 5000,
+    "temperature": 0.1,
+    "top_p": 1,
+    "inlineSuggestCount": 3
+  },
+
+  // C# and .NET Specific Settings
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+  "dotnet.inlayHints.enableInlayHintsForParameters": true,
+  "dotnet.inlayHints.enableInlayHintsForLiteralParameters": true,
+  "dotnet.inlayHints.enableInlayHintsForIndexerParameters": true,
+  "dotnet.inlayHints.enableInlayHintsForObjectCreationParameters": true,
+  "dotnet.inlayHints.enableInlayHintsForOtherParameters": true,
+  "dotnet.inlayHints.enableInlayHintsForTypes": true,
+  "dotnet.inlayHints.enableInlayHintsForImplicitVariableTypes": true,
+  "dotnet.inlayHints.enableInlayHintsForImplicitObjectCreation": true,
+
+  // Razor and Blazor Outline/Folding Settings
+  "razor.languageServer.debug": false,
+  "razor.plugin.codeActions.enabled": true,
+  "razor.completion.commitElementsWithSpace": true,
+  "razor.format.enable": true,
+
+  // Outline and Symbol Settings for Razor
+  "outline.showFiles": true,
+  "outline.showModules": true,
+  "outline.showNamespaces": true,
+  "outline.showPackages": true,
+  "outline.showClasses": true,
+  "outline.showMethods": true,
+  "outline.showProperties": true,
+  "outline.showFields": true,
+  "outline.showConstructors": true,
+  "outline.showEnums": true,
+  "outline.showInterfaces": true,
+  "outline.showFunctions": true,
+  "outline.showVariables": true,
+  "outline.showConstants": true,
+  "outline.showStrings": true,
+  "outline.showNumbers": true,
+  "outline.showBooleans": true,
+  "outline.showArrays": true,
+  "outline.showObjects": true,
+  "outline.showKeys": true,
+  "outline.showNull": true,
+  "outline.collapseItems": "alwaysExpand",
+
+  // Folding Settings
+  "editor.folding": true,
+  "editor.foldingStrategy": "auto",
+  "editor.foldingImportsByDefault": false,
+  "editor.showFoldingControls": "always",
+  "editor.foldingMaximumRegions": 5000,
+
+  // IntelliSense and Code Completion
+  "editor.inlineSuggest.enabled": true,
+  "editor.suggestSelection": "first",
+  "editor.acceptSuggestionOnCommitCharacter": true,
+  "editor.acceptSuggestionOnEnter": "on",
+  "editor.tabCompletion": "on",
+  "editor.wordBasedSuggestions": "allDocuments",
+  "editor.parameterHints.enabled": true,
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "on",
+    "strings": "on"
+  },
+
+  // File Association for TodoList Project
+  "files.associations": {
+    "*.razor": "razor",
+    "*.cshtml": "razor",
+    "*.http": "http",
+    "mcp.json": "jsonc",
+    ".env.mcp": "properties"
+  },
+
+  // Language-specific Settings for Better Outline Support
+  "[razor]": {
+    "editor.folding": true,
+    "editor.foldingStrategy": "auto",
+    "editor.showFoldingControls": "always",
+    "editor.semanticHighlighting.enabled": true,
+    "editor.wordBasedSuggestions": "allDocuments",
+    "editor.suggest.showStatusBar": true
+  },
+  "[csharp]": {
+    "editor.folding": true,
+    "editor.foldingStrategy": "auto",
+    "editor.showFoldingControls": "always",
+    "editor.semanticHighlighting.enabled": true
+  },
+
+  // Search and Indexing
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/wwwroot/lib": true
+  },
+  "files.watcherExclude": {
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/node_modules/**": true
+  },
+
+  // TodoList Project Specific
+  "csharp.semanticHighlighting.enabled": true,
+  "csharp.inlayHints.enableInlayHintsForTypes": true,
+  "csharp.inlayHints.enableInlayHintsForParameters": true,
+  "omnisharp.enableRoslynAnalyzers": true,
+
+  // Terminal Configuration
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "icon": "terminal-powershell",
+      "args": [
+        "-NoExit",
+        "-Command",
+        "Write-Host 'TodoList MCP Environment Ready' -ForegroundColor Green"
+      ]
+    }
+  },
+
+  // Workspace Trust
+  "security.workspace.trust.untrustedFiles": "open",
+  "security.workspace.trust.enabled": false,
+
+  // Extensions Recommendations
+  "extensions.recommendations": [
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.vscode-dotnet-runtime",
+    "ms-vscode.vscode-json",
+    "ms-vscode.powershell",
+    "github.copilot",
+    "github.copilot-chat",
+    "ms-dotnettools.blazorwasm-companion"
+  ],
+  "chatgpt.openOnStartup": true,
+  "claudeCodeChat.permissions.yoloMode": false
+}

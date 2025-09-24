@@ -1,0 +1,530 @@
+@page "/"
+@implements IDisposable
+@using TodoApp.Api.Models
+@using System.Net.Http.Headers
+@using System.Text
+@inject TodoApp.Web.Services.TodoApiClient Api
+@inject IJSRuntime JSRuntime
+@inject Microsoft.JSInterop.IJSRuntime MyJSRuntime
+@inject HttpClient HttpClient
+
+<div class="container-fluid ">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-gradient-primary text-white rounded-top-4 d-flex justify-content-between align-items-center p-4">
+                    <div>
+                        <h2 class="mb-0 fw-bold display-6">Smart TodoList</h2>
+                        <small class="opacity-75">Manage your tasks efficiently</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center">
+                            <div class="badge bg-light text-dark fs-6 me-2">@_totalTodos</div>
+                            <small>Total Tasks</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="darkModeSwitch" checked="@_isDarkMode" @onchange="ToggleDarkMode">
+                            <label class="form-check-label text-white" for="darkModeSwitch">Dark Mode</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Filter Buttons -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="filter" id="filterAll" checked="@(_filter == TodoFilter.All)" @onchange="(e) => SetFilter(TodoFilter.All)">
+                            <label class="btn btn-outline-primary @( _filter == TodoFilter.All ? "active" : "")" for="filterAll">All (@_filteredItems.Count)</label>
+                            
+                            <input type="radio" class="btn-check" name="filter" id="filterActive" checked="@(_filter == TodoFilter.Active)" @onchange="(e) => SetFilter(TodoFilter.Active)">
+                            <label class="btn btn-outline-primary @( _filter == TodoFilter.Active ? "active" : "")" for="filterActive">Active (@_activeTodos)</label>
+                            
+                            <input type="radio" class="btn-check" name="filter" id="filterCompleted" checked="@(_filter == TodoFilter.Completed)" @onchange="(e) => SetFilter(TodoFilter.Completed)">
+                            <label class="btn btn-outline-primary @( _filter == TodoFilter.Completed ? "active" : "")" for="filterCompleted">Completed (@_completedTodos)</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Add Todo Input -->
+                    <div class="input-group mb-4 shadow-sm rounded-3 overflow-hidden">
+                        <input value="@_newTitle" @oninput="(e) => _newTitle = e.Value?.ToString() ?? string.Empty" @onkeyup="HandleKeyUp" class="form-control border-0 py-3 px-4 fs-6" placeholder="What needs to be done today?" aria-label="New todo title" />
+                        <button type="button" class="btn btn-outline-secondary border-0 py-3 px-3 transition-all" @onclick="OpenAIChat" title="AI Chat Assistant">
+                            <i class="bi bi-robot fs-5"></i>
+                        </button>
+                        <button @onclick="Add" class="btn btn-primary border-0 py-3 px-4" disabled="@(_loadError is not null || string.IsNullOrEmpty(_newTitle))">
+                            <i class="bi bi-plus-lg"></i> Add Task
+                        </button>
+                    </div>
+
+                    @if (!_filteredItems.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-check-circle-fill display-1 text-muted"></i>
+                            <h5 class="text-muted mt-3">No tasks @( _filter == TodoFilter.Active ? "pending" : _filter == TodoFilter.Completed ? "completed" : "yet")</h5>
+                            <p class="text-muted">Start by adding your first task above!</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="todo-list-container">
+                            <ul class="list-group list-group-flush rounded-3 shadow-sm" style="max-height: 500px; overflow-y: auto;">
+                                @foreach (var t in _filteredItems)
+                                {
+                                    <li class="list-group-item todo-item @(t.IsDone ? "completed" : "") d-flex align-items-center py-3 px-3">
+                                        <div class="d-flex align-items-center flex-grow-1">
+                                            <div class="form-check ms-2 me-3">
+                                                <input type="checkbox" class="form-check-input todo-checkbox" id="todo-@t.Id" checked="@t.IsDone" 
+                                                       @onchange="(e)=>Toggle(t, e.Value as bool? ?? false)" />
+                                            </div>
+                                            <label for="todo-@t.Id" class="form-check-label flex-grow-1 @(t.IsDone ? "text-decoration-line-through text-muted" : "")" 
+                                                   style="cursor: pointer;">
+                                                <input value="@t.Title" @onchange="(e)=>EditTitle(t, e.Value?.ToString() ?? t.Title)" 
+                                                       class="form-control-plaintext border-0 bg-transparent w-100 todo-input" 
+                                                       style="font-size: 1rem; padding: 0.25rem 0;" />
+                                            </label>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <small class="text-muted d-none d-md-inline">@t.CreatedAt.ToString("MMM dd")</small>
+                                            <button @onclick="() => Remove(t.Id)" class="btn btn-danger btn-sm delete-btn" 
+                                                    aria-label="Delete task">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                    
+                    <!-- Clear Completed Button -->
+                    @if (_completedTodos > 0)
+                    {
+                        <div class="d-flex justify-content-center mt-4">
+                            <button @onclick="ClearCompleted" class="btn btn-outline-warning btn-lg rounded-pill px-4">
+                                <i class="bi bi-archive me-2"></i> Clear Completed (@_completedTodos)
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@if (_showAIChat)
+{
+    <div class="ai-chat-overlay" role="dialog" aria-modal="true" aria-labelledby="aiChatModalLabel" @onclick="CloseAIChat">
+        <div class="modal-dialog modal-lg modal-dialog-centered" @onclick:stopPropagation>
+            <div class="modal-content ai-chat-card @( _isDarkMode ? "ai-chat-card-dark" : "ai-chat-card-light")">
+                <div class="modal-header ai-chat-header @( _isDarkMode ? "ai-chat-header-dark" : "ai-chat-header-light")">
+                    <h5 class="modal-title ai-chat-title" id="aiChatModalLabel">
+                        <i class="bi bi-robot me-2"></i>AI Task Assistant
+                    </h5>
+                    <button type="button" class="ai-chat-close" @onclick="CloseAIChat" aria-label="Close">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="chat-container h-100 d-flex flex-column ai-chat-body">
+                        <div class="chat-history flex-grow-1 p-3 overflow-auto ai-chat-scroll">
+                            @if (_chatHistory.Any())
+                            {
+                                @foreach (var msg in _chatHistory)
+                                {
+                                    <div class="mb-3 @(msg.IsUser ? "text-end" : "")">
+                                        <div class="d-inline-block p-2 rounded-3 ai-chat-message @(msg.IsUser ? "bg-primary text-white" : _isDarkMode ? "bg-dark text-white border border-secondary border-opacity-50" : "bg-secondary bg-opacity-25")">
+                                            <small class="fw-bold d-block mb-1">@(msg.IsUser ? "You" : "AI")</small>
+                                            <div>@((MarkupString)msg.Content)</div>
+                                            @if (!msg.IsUser && msg.Suggestions?.Any() == true)
+                                            {
+                                                <div class="mt-2">
+                                                    @foreach (var suggestion in msg.Suggestions.Take(3))
+                                                    {
+                                                        <button @onclick="() => InsertSuggestion(suggestion)" class="btn btn-sm btn-outline-primary me-1 mb-1 transition-all">
+                                                            <i class="bi bi-lightbulb me-1"></i>@suggestion
+                                                        </button>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-chat-dots display-4 mb-3 opacity-50"></i>
+                                    <p class="lead">AI Task Assistant</p>
+                                    <p>Ask me to generate task ideas or suggestions!</p>
+                                    <small class="text-muted">Example: "Suggest 3 daily productivity tasks"</small>
+                                </div>
+                            }
+                        </div>
+                        <div class="chat-input p-3 border-top ai-chat-console">
+                            <div class="input-group ai-chat-input-group">
+                                <input type="text" @bind="_chatInput" @onkeydown="HandleChatKeyDown" @onkeyup="HandleChatKeyUp" class="form-control" placeholder="Type your message to the AI..." />
+                                <button @onclick="SendChatMessage" class="btn btn-primary transition-all" disabled="@string.IsNullOrWhiteSpace(_chatInput)">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <small class="text-muted">Powered by Grok 4 via OpenRouter</small>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@code {
+    #region Private Fields
+    private List<TodoApp.Shared.TodoItemDto> _items = new();
+    private string _newTitle = "";
+    private bool _isDarkMode = false;
+    private TodoFilter _filter = TodoFilter.All;
+    private bool _showAIChat = false;
+    private List<ChatMessage> _chatHistory = new();
+    private string _chatInput = "";
+    private bool _enterKeyPressedWithoutShift;
+    private string? _loadError;
+    #endregion
+
+    #region Computed Properties
+    private List<TodoApp.Shared.TodoItemDto> _filteredItems => _filter switch
+    {
+        TodoFilter.All => _items,
+        TodoFilter.Active => _items.Where(i => !i.IsDone).ToList(),
+        TodoFilter.Completed => _items.Where(i => i.IsDone).ToList(),
+        _ => _items
+    };
+    private int _totalTodos => _items.Count;
+    private int _activeTodos => _items.Count(i => !i.IsDone);
+    private int _completedTodos => _items.Count(i => i.IsDone);
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _items = await Api.GetAllAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            HandleApiFailure("memuat data todo", ex);
+        }
+        catch (Exception ex)
+        {
+            HandleApiFailure("memuat data todo", ex);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Get saved dark mode preference from localStorage
+            _isDarkMode = await MyJSRuntime.InvokeAsync<bool>("getCurrentDarkMode");
+            StateHasChanged();
+        }
+    }
+    #endregion
+
+    #region Event Handlers
+    private async Task Add()
+    {
+        if (string.IsNullOrWhiteSpace(_newTitle) || _loadError is not null) return;
+
+        try
+        {
+            var created = await Api.CreateAsync(_newTitle.Trim());
+            if (created is not null)
+            {
+                _items.Insert(0, created);
+            }
+            _newTitle = string.Empty;
+            ClearApiError();
+        }
+        catch (HttpRequestException ex)
+        {
+            HandleApiFailure("menambahkan todo", ex);
+        }
+        catch (Exception ex)
+        {
+            HandleApiFailure("menambahkan todo", ex);
+        }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Add();
+        }
+    }
+
+    private async Task ToggleDarkMode(ChangeEventArgs e)
+    {
+        _isDarkMode = (bool)(e.Value ?? false);
+        await MyJSRuntime.InvokeVoidAsync("toggleDarkMode", _isDarkMode);
+    }
+
+    private void SetFilter(TodoFilter filter)
+    {
+        _filter = filter;
+    }
+
+    private void OpenAIChat()
+    {
+        _showAIChat = true;
+        ToggleBodyScroll(true);
+    }
+
+    private void CloseAIChat()
+    {
+        _showAIChat = false;
+        ToggleBodyScroll(false);
+    }
+
+    private void ToggleBodyScroll(bool disable)
+    {
+        var script = disable
+            ? "document.body.classList.add('ai-modal-open');"
+            : "document.body.classList.remove('ai-modal-open');";
+        _ = MyJSRuntime.InvokeVoidAsync("eval", script);
+    }
+
+    private async Task SendChatMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_chatInput)) return;
+
+        var userMessage = _chatInput.Trim();
+        _chatHistory.Add(new ChatMessage(userMessage, true));
+        _chatInput = "";
+
+        try
+        {
+            var apiKey = await MyJSRuntime.InvokeAsync<string>("localStorage.getItem", "OpenRouterApiKey");
+            var aiResponse = await Api.RequestChatAsync(userMessage, apiKey);
+
+            if (aiResponse is not null)
+            {
+                _chatHistory.Add(aiResponse);
+            }
+            else
+            {
+                _chatHistory.Add(new ChatMessage("AI did not return a response.", false));
+            }
+        }
+        catch (Exception ex)
+        {
+            _chatHistory.Add(new ChatMessage($"Error communicating with AI: {ex.Message}. Please check your API key.", false));
+        }
+
+        StateHasChanged();
+    }
+
+    private void InsertSuggestion(string suggestion)
+    {
+        _newTitle = suggestion;
+        CloseAIChat();
+    }
+
+    private void HandleChatKeyDown(KeyboardEventArgs e)
+    {
+        _enterKeyPressedWithoutShift = e.Key == "Enter" && !e.ShiftKey;
+    }
+
+    private async Task HandleChatKeyUp(KeyboardEventArgs e)
+    {
+        if (_enterKeyPressedWithoutShift && e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendChatMessage();
+        }
+
+        _enterKeyPressedWithoutShift = false;
+    }
+    #endregion
+
+    #region Helper Methods
+    private void ClearApiError()
+    {
+        if (_loadError is not null)
+        {
+            _loadError = null;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void HandleApiFailure(string context, Exception ex)
+    {
+        var baseUrl = Api.BaseAddress?.ToString() ?? "API backend";
+        _loadError = ex switch
+        {
+            HttpRequestException httpEx => $"Tidak dapat terhubung ke API ({baseUrl}). Detail: {httpEx.Message}",
+            InvalidOperationException invalid => $"API menolak permintaan untuk {context}: {invalid.Message}",
+            _ => $"Terjadi kesalahan saat {context}: {ex.Message}"
+        };
+
+        InvokeAsync(StateHasChanged);
+    }
+    #endregion
+
+    #region API Operations
+    private async Task ClearAll()
+    {
+        if (_loadError is not null) return;
+
+        try
+        {
+            if (await Api.ClearAllAsync())
+            {
+                _items.Clear();
+                ClearApiError();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            HandleApiFailure("menghapus semua todo", ex);
+        }
+        catch (Exception ex)
+        {
+            HandleApiFailure("menghapus semua todo", ex);
+        }
+    }
+    
+    private async Task ClearCompleted()
+    {
+        if (_loadError is not null) return;
+
+        try
+        {
+            var completedIds = _items.Where(i => i.IsDone).Select(i => i.Id).ToList();
+            foreach (var id in completedIds)
+            {
+                await Api.DeleteAsync(id);
+            }
+
+            _items.RemoveAll(i => i.IsDone);
+            ClearApiError();
+        }
+        catch (HttpRequestException ex)
+        {
+            HandleApiFailure("menghapus todo yang selesai", ex);
+        }
+        catch (Exception ex)
+        {
+            HandleApiFailure("menghapus todo yang selesai", ex);
+        }
+    }
+
+    private async Task Toggle(TodoApp.Shared.TodoItemDto item, bool value)
+    {
+        if (_loadError is not null) return;
+
+        try
+        {
+            if (await Api.UpdateAsync(item.Id, item.Title, value))
+            {
+                var idx = _items.FindIndex(x => x.Id == item.Id);
+                if (idx >= 0)
+                {
+                    _items[idx] = item with { IsDone = value };
+                }
+
+                ClearApiError();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            HandleApiFailure("memperbarui status todo", ex);
+        }
+        catch (Exception ex)
+        {
+            HandleApiFailure("memperbarui status todo", ex);
+        }
+    }
+
+    private async Task EditTitle(TodoApp.Shared.TodoItemDto item, string title)
+    {
+        title = title.Trim();
+        if (string.IsNullOrEmpty(title) || title == item.Title || _loadError is not null) return;
+
+        try
+        {
+            if (await Api.UpdateAsync(item.Id, title, item.IsDone))
+            {
+                var idx = _items.FindIndex(x => x.Id == item.Id);
+                if (idx >= 0)
+                {
+                    _items[idx] = item with { Title = title };
+                }
+
+                ClearApiError();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            HandleApiFailure("mengubah judul todo", ex);
+        }
+        catch (Exception ex)
+        {
+            HandleApiFailure("mengubah judul todo", ex);
+        }
+    }
+
+    private async Task Remove(int id)
+    {
+        if (_loadError is not null) return;
+
+        try
+        {
+            if (await Api.DeleteAsync(id))
+            {
+                _items.RemoveAll(x => x.Id == id);
+                ClearApiError();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            HandleApiFailure("menghapus todo", ex);
+        }
+        catch (Exception ex)
+        {
+            HandleApiFailure("menghapus todo", ex);
+        }
+    }
+    #endregion
+
+    #region Enums
+    private enum TodoFilter
+    {
+        All,
+        Active,
+        Completed
+    }
+    #endregion
+
+    public void Dispose()
+    {
+        ToggleBodyScroll(false);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
